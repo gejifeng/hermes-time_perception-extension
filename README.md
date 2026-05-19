@@ -1,78 +1,86 @@
 # hermes-time-perception
 
-Hermes Agent 的独立时间感知扩展。每个 LLM turn 发起之前，通过原生 `pre_llm_call` hook
-把当前时间标签 append 到 user message 末尾。
+A standalone time-perception extension for [Hermes Agent](https://github.com/NousResearch/hermes-agent). Before every LLM turn, it appends a current-time tag to the user message via the native `pre_llm_call` hook.
 
-- **零 patch**：完全走 Hermes 正规扩展面，不修改任何 Hermes 源码。
-- **ephemeral**：注入内容只存在于当次 LLM 请求，不持久化到 session DB，不影响 prompt cache。
-- **时区可配置**：`HERMES_TIMEZONE` 环境变量 > `~/.hermes/config.yaml` 的 `timezone` > 系统本地时区。
+- **Zero-patch**: uses the official extension surface only — no modifications to Hermes source.
+- **Ephemeral**: the injected content lives only inside the current LLM request; it is not persisted to the session DB and does not break prompt cache.
+- **Configurable timezone**: `HERMES_TIMEZONE` env var > `~/.hermes/config.yaml: timezone` > system local timezone.
 
-## 注入示例
+## Injection example
 
 ```
 [Current time: 2026-05-20 14:30 CST 星期三]
 ```
 
-## 文件结构
+## File layout
 
 ```
 time_perception/
 ├── plugin/
-│   ├── plugin.yaml          # Hermes 插件清单
-│   ├── __init__.py          # register(ctx) 入口
+│   ├── plugin.yaml          # Hermes plugin manifest
+│   ├── __init__.py          # register(ctx) entrypoint
 │   └── hooks.py             # pre_llm_call hook
-├── time_perception/         # 纯 Python 工具包，零 Hermes 耦合
+├── time_perception/         # pure-Python utilities, zero Hermes coupling
 │   ├── __init__.py
 │   └── time_context.py
 ├── tests/
 │   └── test_time_context.py
-├── init_design.md           # 设计背景与 roadmap
+├── init_design.md           # design background & roadmap
 └── README.md
 ```
 
-## 安装
+## Install
 
 ```bash
 mkdir -p ~/.hermes/plugins
-ln -snf /home/gejifeng/DEV/Hermes_dev/time_perception/plugin \
+git clone https://github.com/gejifeng/hermes-time_perception-extension \
         ~/.hermes/plugins/hermes-time-perception
 
 hermes plugins enable hermes-time-perception
-hermes plugins list   # 应看到 enabled
+hermes plugins list   # should show enabled
 ```
 
-## 时区配置（可选）
+## Timezone configuration (optional)
 
 ```bash
 export HERMES_TIMEZONE="Asia/Shanghai"
 ```
-或写进 `~/.hermes/config.yaml`：
+
+Or in `~/.hermes/config.yaml`:
+
 ```yaml
 timezone: Asia/Shanghai
 ```
 
-## 验证
+## Verify
 
 ```bash
-# 1. 单元测试
-cd /home/gejifeng/DEV/Hermes_dev/time_perception
+# 1. Unit tests
 python3 -m pytest tests/ -v
 
-# 2. 手动 smoke
+# 2. Manual smoke test
 python3 -c "from time_perception.time_context import format_current_time; print(format_current_time())"
 
-# 3. 真实端到端
-hermes -z "请回答：现在的日期、时间、星期几？"
+# 3. End-to-end with Hermes
+hermes -z "Please answer: what is the current date, time, and day of week?"
 ```
 
-## 卸载
+## Uninstall
 
 ```bash
 hermes plugins disable hermes-time-perception
-rm ~/.hermes/plugins/hermes-time-perception
+rm -rf ~/.hermes/plugins/hermes-time-perception
 ```
 
-## 兼容性
+## Compatibility
 
-- Hermes v0.12.x / v0.13.x 已验证 `pre_llm_call` 与 `PluginContext.register_hook`。
-- 升级 Hermes 后，运行 `python3 -m pytest tests/ -v` 即可回归。
+- Verified on Hermes v0.12.x / v0.13.x with `pre_llm_call` and `PluginContext.register_hook`.
+- After upgrading Hermes, run `python3 -m pytest tests/ -v` for a quick regression check.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+---
+
+中文版：[README.zh-CN.md](README.zh-CN.md)
